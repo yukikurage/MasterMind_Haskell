@@ -3,7 +3,7 @@ module Main where
 import           Prelude
 
 import qualified Data.Char     as Char
-import           Data.List     as List (minimumBy, nub)
+import           Data.List     as List (nub)
 import qualified System.Random as Rand
 
 
@@ -57,24 +57,8 @@ youTurn youNums comNums predictions n = do
     else
       comTurn youNums comNums predictions n
 
-comTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --コンピューターのターンの処理
+comTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --コンピューターのターンの処理(ランダム、実験用)
 comTurn youNums comNums predictions n = do
-  let comPred = searchBest predictions
-      (hit, blow) = judge youNums comPred
-  putStrLn $ "Com > " ++ listToStr comPred
-  putStrLn $ "You > " ++ show hit ++ "H" ++ show blow ++ "B"
-  if hit == n
-    then do
-      putStrLn $ "Your Number is " ++ listToStr youNums
-      putStrLn $ "Com's Number is " ++ listToStr comNums
-      putStrLn "Com Win"
-      return ()
-    else do
-      --youTurn youNums comNums (refine (hit, blow) comPred predictions) n
-      randcomTurn youNums comNums (refine (hit, blow) comPred predictions) n
-
-randcomTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --コンピューターのターンの処理(ランダム、実験用)
-randcomTurn youNums comNums predictions n = do
   rand <- Rand.randomRIO(0, length predictions - 1)
   let comPred = predictions!!rand
       (hit, blow) = judge youNums comPred
@@ -84,10 +68,10 @@ randcomTurn youNums comNums predictions n = do
     then do
       putStrLn $ "Your Number is " ++ listToStr youNums
       putStrLn $ "Com's Number is " ++ listToStr comNums
-      putStrLn "You(R_Com) Win"
+      putStrLn "Com Win"
       return ()
     else do
-      comTurn youNums comNums (refine (hit, blow) comPred predictions) n
+      youTurn youNums comNums (refine (hit, blow) comPred predictions) n
 
 allSort :: Int -> [[Int]] --n桁の考えうるすべての重複がない数字の並びを出力
 allSort 1 = [[x] | x <- [0..9]]
@@ -96,27 +80,6 @@ allSort n = concatMap (\x -> [y:x | y <- [0..9], y `notElem` x]) $ allSort (n - 
 refine :: Eq a => (Int, Int) -> [a] -> [[a]] -> [[a]] --選択肢を絞り込みます
 refine (hit, blow) comPred =
   filter (\pred -> let p_hitblow = judge pred comPred in p_hitblow == (hit, blow))
-
-searchLimit :: Int
-searchLimit = 100
-
-averageRefined :: Eq a => [[a]] -> [Double]
-averageRefined predictions =
-  take searchLimit $ map
-    (\x -> mean $ take searchLimit $ map
-      (\y -> length $ refine (judge x y) x predictions)
-      predictions)
-    predictions
-
-searchBest :: Eq a => [[a]] -> [a]
-searchBest predictions =
-  let averageR = averageRefined predictions
-      ziped = zip predictions averageR
-  in
-    fst $ minimumBy (\x y -> compare (snd x) (snd y)) ziped
-
-mean :: (Fractional a1, Real a2, Foldable t) => t a2 -> a1
-mean xs = (realToFrac $ sum xs) / fromIntegral (length xs)
 
 main :: IO ()
 main = do
@@ -134,8 +97,7 @@ main = do
             loop
     loop
   putStrLn "Set your number"
-  youNums <- randomUniqueNum n
-  --youNums <- getValidNum n
+  youNums <- getValidNum n
   comNums <- randomUniqueNum n
   let predictions = allSort n
-  comTurn youNums comNums predictions n
+  youTurn youNums comNums predictions n
