@@ -1,0 +1,13 @@
+cradle:
+  stack:
+    - path: "./src"
+      component: "MasterMind:lib"
+
+    - path: "./app/Main.hs"
+      component: "MasterMind:exe:MasterMind-exe"
+
+    - path: "./app/Paths_MasterMind.hs"
+      component: "MasterMind:exe:MasterMind-exe"
+
+    - path: "./test"
+      component: "MasterMind:test:MasterMind-test"
