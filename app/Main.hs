@@ -38,7 +38,7 @@ getValidNum n = do
   if length input == n && length (nub input) == n then
     return input
     else do
-      putStrLn "invalid number"
+      putStrLn "Invalid number"
       getValidNum n
 
 youTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --自分のターンの処理
@@ -62,8 +62,8 @@ comTurn youNums comNums predictions n = do
   rand <- Rand.randomRIO(0, length predictions - 1)
   let comPred = predictions!!rand
       (hit, blow) = judge youNums comPred
-  putStrLn $ "You > " ++ listToStr comPred
-  putStrLn $ "Com > " ++ show hit ++ "H" ++ show blow ++ "B"
+  putStrLn $ "Com > " ++ listToStr comPred
+  putStrLn $ "You > " ++ show hit ++ "H" ++ show blow ++ "B"
   if hit == n
     then do
       putStrLn $ "Your Number is " ++ listToStr youNums
@@ -93,7 +93,7 @@ main = do
         if m >= 2 && m <= 4 then
           return m
           else do
-            putStrLn "invalid number"
+            putStrLn "Invalid number"
             loop
     loop
   putStrLn "Set your number"
@@ -101,3 +101,4 @@ main = do
   comNums <- randomUniqueNum n
   let predictions = allSort n
   youTurn youNums comNums predictions n
+  putStrLn "Press any key to close"
