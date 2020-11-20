@@ -35,7 +35,7 @@ strToIntList = map Char.digitToInt
 getValidNum :: Int -> IO [Int] --n桁の数の並びを取得します
 getValidNum n = do
   input <- strToIntList <$> getLine
-  if length input == n then
+  if length input == n && length (nub input) == n then
     return input
     else do
       putStrLn "invalid number"
