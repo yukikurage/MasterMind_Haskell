@@ -5,13 +5,14 @@ import           Prelude
 import qualified Data.Char     as Char
 import           Data.List     as List (nub)
 import qualified System.Random as Rand
+import           Text.Read     (readMaybe)
 
 
 boolToNum :: Bool -> Int
 boolToNum b = if b then 1 else 0
 
 hitCount :: Eq a => [a] -> [a] -> Int
-hitCount = (.) trueCount . zipWith (==)
+hitCount xs = trueCount . zipWith (==) xs
 
 trueCount :: [Bool] -> Int --配列に含まれるTrueの個数を返します
 trueCount = foldl ((. boolToNum) . (+)) 0
@@ -26,48 +27,61 @@ judge txs xs =
 randomUniqueNum :: Int -> IO [Int]
 randomUniqueNum n = take n . nub . Rand.randomRs (0,9::Int) <$> Rand.newStdGen
 
-listToStr :: [Int] -> String
-listToStr =  map Char.intToDigit
+intListToStr :: [Int] -> String
+intListToStr =  map Char.intToDigit
 
 strToIntList :: String -> [Int]
-strToIntList = map Char.digitToInt
+strToIntList =  map Char.digitToInt
 
-getValidNum :: Int -> IO [Int] --n桁の数の並びを取得します
-getValidNum n = do
-  input <- strToIntList <$> getLine
-  if length input == n && length (nub input) == n then
+maybeStrToIntList :: String -> Maybe [Int]
+maybeStrToIntList str =
+  if all Char.isDigit str then
+    Just $ map Char.digitToInt str
+  else Nothing
+
+getValidLine :: (String -> Bool) -> IO String --条件にあった文字列を取得
+getValidLine f = do
+  input <- getLine
+  if f input then
     return input
     else do
-      putStrLn "Invalid number"
-      getValidNum n
+      putStr "Invalid String"
+      getValidLine f
+
+getValidNums :: Int -> IO [Int] --n桁の数字の並びを取得
+getValidNums n = strToIntList <$> getValidLine f where
+  f :: String -> Bool
+  f x = case maybeStrToIntList x of
+    Nothing -> False
+    Just y  -> n == length y
 
 youTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --自分のターンの処理
 youTurn youNums comNums predictions n = do
   putStrLn "Write prediction"
-  input <- getValidNum n
+  input <- getValidNums n
   let (hit, blow) = judge comNums input
-  putStrLn $ "You > " ++ listToStr input
+  putStrLn $ "You > " ++ intListToStr input
   putStrLn $ "Com > " ++ show hit ++ "H" ++ show blow ++ "B"
   if hit == n
     then do
-      putStrLn $ "Your Number is " ++ listToStr youNums
-      putStrLn $ "Com's Number is " ++ listToStr comNums
+      putStrLn $ "Your Number is " ++ intListToStr youNums
+      putStrLn $ "Com's Number is " ++ intListToStr comNums
       putStrLn "You Win"
       return ()
     else
       comTurn youNums comNums predictions n
 
-comTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --コンピューターのターンの処理(ランダム、実験用)
+comTurn :: [Int] -> [Int] -> [[Int]] -> Int -> IO () --コンピューターのターンの処理(ランダム)
 comTurn youNums comNums predictions n = do
   rand <- Rand.randomRIO(0, length predictions - 1)
   let comPred = predictions!!rand
       (hit, blow) = judge youNums comPred
-  putStrLn $ "Com > " ++ listToStr comPred
+  putStrLn $ "Com > " ++ intListToStr comPred
   putStrLn $ "You > " ++ show hit ++ "H" ++ show blow ++ "B"
   if hit == n
     then do
-      putStrLn $ "Your Number is " ++ listToStr youNums
-      putStrLn $ "Com's Number is " ++ listToStr comNums
+      putStrLn $ "Your Number is " ++ intListToStr youNums
+      putStrLn $ "Com's Number is " ++ intListToStr comNums
       putStrLn "Com Win"
       return ()
     else do
@@ -81,24 +95,19 @@ refine :: Eq a => (Int, Int) -> [a] -> [[a]] -> [[a]] --選択肢を絞り込み
 refine (hit, blow) comPred =
   filter (\pred -> let p_hitblow = judge pred comPred in p_hitblow == (hit, blow))
 
+getValidNum :: (Int -> Bool) -> IO Int
+getValidNum f = read <$> getValidLine g where
+  g x = maybe False f (readMaybe x :: Maybe Int)
+
 main :: IO ()
 main = do
   putStrLn "Select Digits(2 ~ 4)"
-  n <- do
-    let
-      loop = do
-        str <- getLine :: IO String
-        let m :: Int
-            m = read str
-        if m >= 2 && m <= 4 then
-          return m
-          else do
-            putStrLn "Invalid number"
-            loop
-    loop
+  n <- getValidNum ((&&) . (2<=) <*> (4<=))
   putStrLn "Set your number"
-  youNums <- getValidNum n
+  youNums <- getValidNums n
   comNums <- randomUniqueNum n
   let predictions = allSort n
   youTurn youNums comNums predictions n
   putStrLn "Press any key to close"
+  _ <- getLine :: IO String
+  return ()
