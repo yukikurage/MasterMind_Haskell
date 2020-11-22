@@ -45,7 +45,7 @@ getValidLine f = do
   if f input then
     return input
     else do
-      putStr "Invalid String"
+      putStrLn "Invalid String"
       getValidLine f
 
 getValidNums :: Int -> IO [Int] --n桁の数字の並びを取得
@@ -102,7 +102,7 @@ getValidNum f = read <$> getValidLine g where
 main :: IO ()
 main = do
   putStrLn "Select Digits(2 ~ 4)"
-  n <- getValidNum ((&&) . (2<=) <*> (4<=))
+  n <- getValidNum ((&&) . (2<=) <*> (4>=))
   putStrLn "Set your number"
   youNums <- getValidNums n
   comNums <- randomUniqueNum n
